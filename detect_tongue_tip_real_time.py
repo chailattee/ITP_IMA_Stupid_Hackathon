@@ -9,6 +9,34 @@ from face_utils import MOUTH_AR_THRESH, draw_mouth, get_mouth_loc_with_height, m
 
 orb = cv2.ORB_create(nfeatures=1000, fastThreshold=5, edgeThreshold=10)
 
+def check_tongue_for_player(shape, frame, mouth_data):
+    """Helper: Detect if tongue is out for a specific player given their shape and mouth data"""
+    try:
+        mouthMAR = mouth_aspect_ratio(shape)
+        
+        if mouthMAR > MOUTH_AR_THRESH:
+            mX = mouth_data['mouth_x']
+            mY = mouth_data['mouth_y']
+            mW = mouth_data['mouth_w']
+            mH = mouth_data['mouth_h']
+            iMY = mouth_data['inner_mouth_y']
+            
+            # Extract mouth region
+            roi = frame[iMY:mY+mH, mX:mX + mW]
+            
+            if roi.size == 0:
+                return False
+            
+            # Detect keypoints (tongue has texture)
+            roi = imutils.resize(roi, width=250, inter=cv2.INTER_CUBIC)
+            kp = orb.detect(roi, None)
+            
+            # Tongue out if enough keypoints found
+            return len(kp) > 50
+        return False
+    except:
+        return False
+
 # Function to detect if tongue is out, True = out, False = not out
 def is_tongue_out(frame):
     if frame is None:

@@ -13,11 +13,16 @@ from face_utils import (
     draw_mouth,
     get_head_tilt_angle,
     shape_to_np,
+    mouth_aspect_ratio,
+    MOUTH_AR_THRESH,
 )
+from detect_tongue_tip_real_time import check_tongue_for_player
+import detect_tongue_tip_real_time
 
 # Frame queue for thread-safe communication
 frame_queue = Queue(maxsize=2)
 detection_queue = Queue(maxsize=2)  # Queue for face angle data
+tongue_queue = Queue(maxsize=2)  # Queue for tongue states
 running = True
 last_frame = None
 
@@ -44,8 +49,10 @@ def camera_capture_thread():
         # Detect all faces in frame
         rects = detector(gray, 1)
 
-        # Extract angles for each face (max 2)
+        # Extract angles and tongue states for each face (max 2)
         face_angles = []
+        tongue_states = [False, False]
+        
         for face_idx, rect in enumerate(rects):
             if face_idx >= 2:  # Max 2 players
                 break
@@ -64,10 +71,40 @@ def camera_capture_thread():
             )  # Yellow line
 
             face_angles.append({"face_id": face_idx, "angle": angle})
+            
+            # Check tongue for this player
+            try:
+                # Extract mouth location and dimensions
+                from imutils import face_utils
+                mouth_x, mouth_y, mouth_w, mouth_h = 0, 0, 0, 0
+                inner_mouth_y = 0
+                
+                for (name, (i, j)) in face_utils.FACIAL_LANDMARKS_IDXS.items():
+                    if name == "mouth":
+                        (mouth_x, mouth_y, mouth_w, mouth_h) = cv2.boundingRect(np.array([shape[i:j]]))
+                    if name == "inner_mouth":
+                        (inner_x, inner_y, inner_w, inner_h) = cv2.boundingRect(np.array([shape[i:j]]))
+                        inner_mouth_y = inner_y
+                
+                mouth_data = {
+                    'mouth_x': mouth_x,
+                    'mouth_y': mouth_y,
+                    'mouth_w': mouth_w,
+                    'mouth_h': mouth_h,
+                    'inner_mouth_y': inner_mouth_y
+                }
+                
+                tongue_states[face_idx] = check_tongue_for_player(shape, enhanced, mouth_data)
+            except:
+                tongue_states[face_idx] = False
 
         # Send face angles to main loop
         if face_angles and not detection_queue.full():
             detection_queue.put(face_angles)
+        
+        # Send tongue states to main loop
+        if not tongue_queue.full():
+            tongue_queue.put(tongue_states)
 
         # Convert BGR to RGB for pygame
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -84,6 +121,13 @@ def get_player_head_angles():
     if not detection_queue.empty():
         return detection_queue.get()
     return None
+
+
+def get_tongue_states():
+    """Get tongue states for both players (non-blocking)"""
+    if not tongue_queue.empty():
+        return tongue_queue.get()
+    return [False, False]
 
 
 pygame.init()
@@ -178,8 +222,18 @@ while running:
             # left=positive, right=negative relative to y axis
             if players[player_id].state > -1 and angle > 20:  # Player tilt left
                 players[player_id].move(-20)  # Move left
+                print(f"Player {player_id + 1} tilt left! Move left triggered.")
             elif players[player_id].state < 1 and angle < -20:  # Player tilt right
                 players[player_id].move(20)  # Move right
+                print(f"Player {player_id + 1} tilt right! Move right triggered.")
+    
+    tongue_states = get_tongue_states()
+    if tongue_states:
+        for tongue_state in tongue_states:
+            player_id = tongue_states.index(tongue_state)
+            if tongue_state:  # Tongue is out
+                players[player_id].attack()  # Attack action
+                print(f"Player {player_id + 1} tongue out! Attack triggered.")
 
     screen.fill((255, 255, 255))
 
