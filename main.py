@@ -300,11 +300,24 @@ class player:
     #         screen, (0, 255, 0), (self.x - 50, 25, fill_width, bar_height)
     #     )  # Green health
 
+
 game_over = False
+
+
 def end_game(screen, winner_id):
-    myFont.render_to(screen, (gridWidth // 2 - 100, gridHeight // 2), f"player {winner_id + 1} wins.", (0, 0, 0))
-    myFont.render_to(screen, (gridWidth // 2 - 100, gridHeight // 2 + 40), "Press any key to reset.", (0, 0, 0))
-    
+    myFont.render_to(
+        screen,
+        (gridWidth // 2 - 100, gridHeight // 2),
+        f"player {winner_id + 1} wins.",
+        (0, 0, 0),
+    )
+    myFont.render_to(
+        screen,
+        (gridWidth // 2 - 100, gridHeight // 2 + 40),
+        "Press any key to reset.",
+        (0, 0, 0),
+    )
+
 
 # Lilypad and player setup
 lilypad_y = gridHeight - lilypadH - 20
@@ -332,6 +345,9 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
+    if player1.health <= 0 or player2.health <= 0:
+        game_over = True
+
     if game_over == False:
         angles = get_player_head_angles()
         if angles:
@@ -343,14 +359,20 @@ while running:
                 # left=positive, right=negative relative to y axis
                 if players[player_id].state > -1 and angle > 20:  # Player tilt left
                     cur = time.time()
-                    if cur - move_prev > 0.5:  # Prevent multiple moves in quick succession
+                    if (
+                        cur - move_prev > 0.5
+                    ):  # Prevent multiple moves in quick succession
                         players[player_id].move(-1)
                         print(f"Player {player_id + 1} tilt left! Move left triggered.")
                 elif players[player_id].state < 1 and angle < -20:  # Player tilt right
                     cur = time.time()
-                    if cur - move_prev > 0.5:  # Prevent multiple moves in quick succession
+                    if (
+                        cur - move_prev > 0.5
+                    ):  # Prevent multiple moves in quick succession
                         players[player_id].move(1)
-                        print(f"Player {player_id + 1} tilt right! Move right triggered.")
+                        print(
+                            f"Player {player_id + 1} tilt right! Move right triggered."
+                        )
 
         tongue_states = get_tongue_states()
         # print(f"Tongue states: {tongue_states}")  # Debugging: print tongue states
@@ -359,8 +381,12 @@ while running:
                 player_id = tongue_states.index(tongue_state)
                 if tongue_state:  # Tongue is out
                     cur = time.time()
-                    if cur - attack_prev > 1:  # Prevent multiple attacks in quick succession
-                        players[player_id].attack(players[1 - player_id])  # Attack action
+                    if (
+                        cur - attack_prev > 1
+                    ):  # Prevent multiple attacks in quick succession
+                        players[player_id].attack(
+                            players[1 - player_id]
+                        )  # Attack action
                         print(f"Player {player_id + 1} tongue out! Attack triggered.")
                         attack_prev = cur
 
