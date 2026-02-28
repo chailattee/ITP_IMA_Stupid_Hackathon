@@ -53,19 +53,18 @@ def camera_capture_thread():
             # Get facial landmarks
             shape = predictor(gray, rect)
             shape = shape_to_np(shape)
-            
+
             # Draw mouth landmarks on frame
             frame = draw_mouth(frame, shape)
-            
+
             # Get head tilt angle and draw line from chin to nose
             angle, nose_top, chin_bottom = get_head_tilt_angle(shape)
-            cv2.line(frame, tuple(nose_top), tuple(chin_bottom), (0, 255, 255), 2)  # Yellow line
-            
-            face_angles.append({
-                'face_id': face_idx,
-                'angle': angle
-            })
-        
+            cv2.line(
+                frame, tuple(nose_top), tuple(chin_bottom), (0, 255, 255), 2
+            )  # Yellow line
+
+            face_angles.append({"face_id": face_idx, "angle": angle})
+
         # Send face angles to main loop
         if face_angles and not detection_queue.full():
             detection_queue.put(face_angles)
@@ -97,7 +96,9 @@ charHeight = 200
 screen = pygame.display.set_mode((gridWidth, gridHeight))
 
 _frog_img = cv2.imread("assets/frog.png", cv2.IMREAD_UNCHANGED)
-_frog_img = cv2.resize(_frog_img, (charWidth, charHeight), interpolation=cv2.INTER_NEAREST)
+_frog_img = cv2.resize(
+    _frog_img, (charWidth, charHeight), interpolation=cv2.INTER_NEAREST
+)
 if _frog_img.shape[2] == 4:
     _frog_img = cv2.cvtColor(_frog_img, cv2.COLOR_BGRA2RGBA)
     frog_sprite = pygame.Surface((charWidth, charHeight), pygame.SRCALPHA)
@@ -125,9 +126,9 @@ class player:
 
     def move(self, dx):
         self.x += dx
-        if (self.state >-1 and dx < 0):
+        if self.state > -1 and dx < 0:
             self.state -= 1
-        elif (self.state < 1 and dx > 0):
+        elif self.state < 1 and dx > 0:
             self.state += 1
 
     def attack(self):
@@ -139,18 +140,22 @@ class player:
 
     def hurt(self):
         self.health -= 10
-        #print(f"Player {self.player_id} hurt! Health: {self.health}")
-    
+        # print(f"Player {self.player_id} hurt! Health: {self.health}")
+
     def draw_health_bar(self, screen):
         bar_width = 150
         bar_height = 20
         fill_width = int(bar_width * (self.health / 100))
-        pygame.draw.rect(screen, (255, 0, 0), (self.x - 50, 25, bar_width, bar_height))  # Red background
-        pygame.draw.rect(screen, (0, 255, 0), (self.x - 50, 25, fill_width, bar_height))  # Green health
+        pygame.draw.rect(
+            screen, (255, 0, 0), (self.x - 50, 25, bar_width, bar_height)
+        )  # Red background
+        pygame.draw.rect(
+            screen, (0, 255, 0), (self.x - 50, 25, fill_width, bar_height)
+        )  # Green health
 
 
-player1 = player(100, gridHeight - charHeight, 0)
-player2 = player(700, gridHeight - charHeight, 1)
+player1 = player((100 - (charWidth / 2)), gridHeight - charHeight, 0)
+player2 = player(gridWidth - (100 + (charWidth / 2)), gridHeight - charHeight, 1)
 players = [player1, player2]
 
 running = True
@@ -170,12 +175,11 @@ while running:
             angle = player_data["angle"]
             # do something with player 0 or 1 and their angle
 
-            #left=positive, right=negative relative to y axis
-            if (players[player_id].state > -1 and angle > 20):  # Player tilt left
+            # left=positive, right=negative relative to y axis
+            if players[player_id].state > -1 and angle > 20:  # Player tilt left
                 players[player_id].move(-20)  # Move left
-            elif (players[player_id].state < 1 and angle < -20):  # Player tilt right
+            elif players[player_id].state < 1 and angle < -20:  # Player tilt right
                 players[player_id].move(20)  # Move right
-            
 
     screen.fill((255, 255, 255))
 
@@ -191,7 +195,6 @@ while running:
     for p in players:
         p.draw(screen)
         p.draw_health_bar(screen)
-    
+
     pygame.display.flip()
     clock.tick(60)
-
