@@ -213,6 +213,7 @@ class player:
         self.x = pads[1].cx - charWidth // 2  # start on middle pad
         self.y = pads[1].y - charHeight + lilypadH // 2
         self.tongue_active = False
+        self.tongue_retracting = False
         self.tongue_width = 0
         self.tongue_max_width = 0
         self.tongue_hit = False
@@ -237,6 +238,7 @@ class player:
 
     def attack(self, other_player):
         self.tongue_active = True
+        self.tongue_retracting = False
         self.tongue_width = 0
         self.tongue_hit = False
         # Max reach: from this player's front pad to other's middle pad
@@ -251,7 +253,7 @@ class player:
     @property
     def tongue_rect(self):
         tongue_height = 20
-        y = self.hitbox.centery - tongue_height // 2
+        y = self.hitbox.centery - (tongue_height // 2) + 25
         if self.player_id == 0:
             return pygame.Rect(self.hitbox.right, y, self.tongue_width, tongue_height)
         else:
@@ -265,14 +267,22 @@ class player:
     def update_tongue(self, other_player):
         if not self.tongue_active:
             return
-        self.tongue_width += 50
-        if self.tongue_width >= self.tongue_max_width:
-            self.tongue_width = self.tongue_max_width
-            self.tongue_active = False
-        if not self.tongue_hit and self.tongue_rect.colliderect(other_player.hitbox):
-            print("Successful attack")
-            other_player.hurt()
-            self.tongue_hit = True
+        if self.tongue_retracting:
+            self.tongue_width -= self.tongue_max_width / 30
+            if self.tongue_width <= 0:
+                self.tongue_width = 0
+                self.tongue_active = False
+        else:
+            self.tongue_width += 50
+            if self.tongue_width >= self.tongue_max_width:
+                self.tongue_width = self.tongue_max_width
+                self.tongue_retracting = True
+            if not self.tongue_hit and self.tongue_rect.colliderect(
+                other_player.hitbox
+            ):
+                print("Successful attack")
+                other_player.hurt()
+                self.tongue_hit = True
 
     def draw_tongue(self, screen):
         if self.tongue_active:
@@ -396,7 +406,6 @@ while running:
         p.draw(screen)
         p.draw_tongue(screen)
         # p.draw_health_bar(screen)
-        p.draw_hitbox(screen)
 
     pygame.display.flip()
     clock.tick(60)
