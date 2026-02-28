@@ -20,6 +20,7 @@ from face_utils import (
 from detect_tongue_tip_real_time import check_tongue_for_player
 import detect_tongue_tip_real_time
 import time
+import random
 
 # Frame queue for thread-safe communication
 frame_queue = Queue(maxsize=2)
@@ -286,7 +287,7 @@ class player:
         pygame.draw.rect(screen, (255, 0, 0), self.hitbox, 2)
 
     def hurt(self):
-        self.health -= 10
+        self.health -= random.randint(15,30)
         # print(f"Player {self.player_id} hurt! Health: {self.health}")
 
     # def draw_health_bar(self, screen):
@@ -338,12 +339,16 @@ player2_fill_width = int(bar_width * (player2.health / 100))
 running = True
 attack_prev = time.time()
 move_prev = time.time()
+reset_requested = False
+
 while running:
     clock.tick(60)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.KEYDOWN and game_over:
+            reset_requested = True
 
     if player1.health <= 0 or player2.health <= 0:
         game_over = True
@@ -437,7 +442,7 @@ while running:
 
     if game_over:
         end_game(screen, 0 if player1.health > player2.health else 1)
-        if event.type == pygame.KEYDOWN:
+        if reset_requested:
             # Reset game state
             player1.health = 100
             player2.health = 100
@@ -446,6 +451,7 @@ while running:
             player1.x = player1.pads[1].cx - charWidth // 2
             player2.x = player2.pads[1].cx - charWidth // 2
             game_over = False
+            reset_requested = False
 
     pygame.display.flip()
     clock.tick(60)
