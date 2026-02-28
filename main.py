@@ -108,9 +108,7 @@ def camera_capture_thread():
                     "inner_mouth_y": inner_mouth_y,
                 }
 
-                tongue_states[player_id] = is_tongue_out(
-                    shape, enhanced, mouth_data
-                )
+                tongue_states[player_id] = is_tongue_out(shape, enhanced, mouth_data)
             except:
                 tongue_states[player_id] = False
 
@@ -332,13 +330,13 @@ game_over = False
 def end_game(screen, winner_id):
     myFont.render_to(
         screen,
-        (gridWidth // 2 - 100, gridHeight // 2),
+        (gridWidth // 2 - 100, gridHeight // 2 - 100),
         f"player {winner_id + 1} wins.",
         (0, 0, 0),
     )
     myFont.render_to(
         screen,
-        (gridWidth // 2 - 100, gridHeight // 2 + 40),
+        (gridWidth // 2 - 100, gridHeight // 2 + 40 - 100),
         "Press any key to reset.",
         (0, 0, 0),
     )
