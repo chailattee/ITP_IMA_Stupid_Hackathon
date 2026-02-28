@@ -54,10 +54,16 @@ def camera_capture_thread():
         # Extract angles and tongue states for each face (max 2)
         face_angles = []
         tongue_states = [False, False]
+        
+        frame_center_x = frame.shape[1] // 2  # Midpoint of frame width
 
         for face_idx, rect in enumerate(rects):
             if face_idx >= 2:  # Max 2 players
                 break
+
+            # Determine player_id based on face x-position (left/right)
+            face_center_x = (rect.left() + rect.right()) // 2
+            player_id = 0 if face_center_x < frame_center_x else 1
 
             # Get facial landmarks
             shape = predictor(gray, rect)
@@ -72,7 +78,7 @@ def camera_capture_thread():
                 frame, tuple(nose_top), tuple(chin_bottom), (0, 255, 255), 2
             )  # Yellow line
 
-            face_angles.append({"face_id": face_idx, "angle": angle})
+            face_angles.append({"face_id": player_id, "angle": angle})
 
             # Check tongue for this player
             try:
@@ -101,11 +107,11 @@ def camera_capture_thread():
                     "inner_mouth_y": inner_mouth_y,
                 }
 
-                tongue_states[face_idx] = check_tongue_for_player(
+                tongue_states[player_id] = check_tongue_for_player(
                     shape, enhanced, mouth_data
                 )
             except:
-                tongue_states[face_idx] = False
+                tongue_states[player_id] = False
 
         # Send face angles to main loop
         if face_angles and not detection_queue.full():
