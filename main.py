@@ -1,6 +1,7 @@
 import pygame
 import pygame.freetype
 import sys
+import random
 import cv2
 import math
 import dlib
@@ -176,6 +177,18 @@ else:
     frog_sprite = pygame.surfarray.make_surface(_frog_img.swapaxes(0, 1))
 frog_sprite_flipped = pygame.transform.flip(frog_sprite, True, False)
 
+_bg_img = cv2.imread("assets/background.png", cv2.IMREAD_UNCHANGED)
+_bg_img = cv2.resize(_bg_img, (800, 600), interpolation=cv2.INTER_NEAREST)
+if _bg_img.shape[2] == 4:
+    _bg_img = cv2.cvtColor(_bg_img, cv2.COLOR_BGRA2RGBA)
+    bg_surface = pygame.Surface((800, 600), pygame.SRCALPHA)
+    _bt = _bg_img.swapaxes(0, 1)
+    pygame.surfarray.pixels3d(bg_surface)[:] = _bt[:, :, :3]
+    pygame.surfarray.pixels_alpha(bg_surface)[:] = _bt[:, :, 3]
+else:
+    _bg_img = cv2.cvtColor(_bg_img, cv2.COLOR_BGR2RGB)
+    bg_surface = pygame.surfarray.make_surface(_bg_img.swapaxes(0, 1))
+
 _lily_img = cv2.imread("assets/lilypad.png", cv2.IMREAD_UNCHANGED)
 _lily_img = cv2.resize(_lily_img, (lilypadW, lilypadH), interpolation=cv2.INTER_NEAREST)
 if _lily_img.shape[2] == 4:
@@ -213,6 +226,7 @@ class player:
         self.x = pads[1].cx - charWidth // 2  # start on middle pad
         self.y = pads[1].y - charHeight + lilypadH // 2
         self.tongue_active = False
+        self.tongue_retracting = False
         self.tongue_width = 0
         self.tongue_max_width = 0
         self.tongue_hit = False
@@ -237,6 +251,7 @@ class player:
 
     def attack(self, other_player):
         self.tongue_active = True
+        self.tongue_retracting = False
         self.tongue_width = 0
         self.tongue_hit = False
         # Max reach: from this player's front pad to other's middle pad
@@ -251,12 +266,14 @@ class player:
     @property
     def tongue_rect(self):
         tongue_height = 20
-        y = self.hitbox.centery - tongue_height // 2
+        y = self.hitbox.centery - (tongue_height // 2) + 25
         if self.player_id == 0:
-            return pygame.Rect(self.hitbox.right, y, self.tongue_width, tongue_height)
+            return pygame.Rect(
+                self.hitbox.right - 8, y, self.tongue_width, tongue_height
+            )
         else:
             return pygame.Rect(
-                self.hitbox.left - self.tongue_width,
+                self.hitbox.left + 8 - self.tongue_width,
                 y,
                 self.tongue_width,
                 tongue_height,
@@ -265,18 +282,26 @@ class player:
     def update_tongue(self, other_player):
         if not self.tongue_active:
             return
-        self.tongue_width += 50
-        if self.tongue_width >= self.tongue_max_width:
-            self.tongue_width = self.tongue_max_width
-            self.tongue_active = False
-        if not self.tongue_hit and self.tongue_rect.colliderect(other_player.hitbox):
-            print("Successful attack")
-            other_player.hurt()
-            self.tongue_hit = True
+        if self.tongue_retracting:
+            self.tongue_width -= self.tongue_max_width / 30
+            if self.tongue_width <= 0:
+                self.tongue_width = 0
+                self.tongue_active = False
+        else:
+            self.tongue_width += 50
+            if self.tongue_width >= self.tongue_max_width:
+                self.tongue_width = self.tongue_max_width
+                self.tongue_retracting = True
+            if not self.tongue_hit and self.tongue_rect.colliderect(
+                other_player.hitbox
+            ):
+                print("Successful attack")
+                other_player.hurt()
+                self.tongue_hit = True
 
     def draw_tongue(self, screen):
         if self.tongue_active:
-            pygame.draw.rect(screen, (255, 105, 180), self.tongue_rect)
+            pygame.draw.rect(screen, (224, 111, 139), self.tongue_rect)
 
     def draw(self, screen):
         sprite = frog_sprite_flipped if self.player_id == 1 else frog_sprite
@@ -320,7 +345,7 @@ def end_game(screen, winner_id):
 
 
 # Lilypad and player setup
-lilypad_y = gridHeight - lilypadH - 20
+lilypad_y = gridHeight - lilypadH - 160
 p1_pads = [lilypad(100 + padSpacing * i, lilypad_y) for i in range(3)]
 p2_pads = [lilypad(gridWidth - 100 - padSpacing * (2 - i), lilypad_y) for i in range(3)]
 
@@ -394,7 +419,7 @@ while running:
                         print(f"Player {player_id + 1} tongue out! Attack triggered.")
                         attack_prev = cur
 
-    screen.fill((255, 255, 255))
+    screen.blit(bg_surface, (0, 0))
     pygame.draw.rect(
         screen, (255, 0, 0), (100 - 50, 25, bar_width, bar_height)
     )  # Red background p1
@@ -437,7 +462,6 @@ while running:
         p.draw(screen)
         p.draw_tongue(screen)
         # p.draw_health_bar(screen)
-        p.draw_hitbox(screen)
 
     if game_over:
         end_game(screen, 0 if player1.health > player2.health else 1)
