@@ -7,29 +7,13 @@ from matplotlib import pyplot as plt
 import math
 from face_utils import MOUTH_AR_THRESH, draw_mouth, get_mouth_loc_with_height, mouth_aspect_ratio
 
-
 orb = cv2.ORB_create(nfeatures=1000, fastThreshold=5, edgeThreshold=10)
 
-# initialize the video stream and allow the cammera sensor to warmup
-print("[INFO] camera sensor warming up...")
-vs = VideoStream(0).start()
-# time.sleep(2.0)
-
-def checkKey(dict, key):
-    return key in dict.keys()
-
-i = 0 # frame counter
-# loop over the frames from the video stream
-while True:
-    # grab the frame from the threaded video stream, resize it to
-    # have a maximum width of 400 pixels, and convert it to greyscale
-
-    frame = vs.read()
+# Function to detect if tongue is out, True = out, False = not out
+def is_tongue_out(frame):
     if frame is None:
-        break
-
-    i += 1
-
+        return False
+    
     enhanced = cv2.detailEnhance(frame, sigma_s=10, sigma_r=0.15)
     frame = imutils.resize(frame, width=500)
 
@@ -56,17 +40,31 @@ while True:
             kp = orb.detect(roi,None)
             len_kp = len(kp)
             ''' Debugging: show keypoints in mouth ROI '''
-            # print(f"Keypoints found: {len(kp)}") 
+            print(f"Keypoints found: {len(kp)}") 
 
             # boolean: tongue is out if mouth is open + keypoints found
-            if len(kp) > 30: # adjust threshold as needed
+            if len(kp) > 50: # ADJUST THRESHOLD ONCE OVALS ARE DRAWN
                 tongue_is_out = True
+        return tongue_is_out
+    else:
+        print("Error in mouth detection: ", result["error"])
+        return False
 
-        status_text = "TONGUE OUT" if tongue_is_out else "NO TONGUE"
-        color = (0, 0, 255) if tongue_is_out else (0, 255, 0)
-        cv2.putText(frame, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
-        cv2.putText(frame, "mouth aspect ratio: {:.2f}".format(mouthMAR), (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
-        cv2.putText(frame, "keypoints: {}".format(len_kp), (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+# initialize the video stream and allow the cammera sensor to warmup
+vs = VideoStream(0).start()
+
+# loop over the frames from the video stream
+while True:
+    frame = vs.read()
+    if frame is None:
+        break
+
+    tongue_is_out = is_tongue_out(frame)
+    status_text = "TONGUE OUT" if tongue_is_out else "NO TONGUE"
+    color = (0, 0, 255) if tongue_is_out else (0, 255, 0)
+    
+    cv2.putText(frame, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+    # cv2.putText(frame, "keypoints: {}".format(len_kp), (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
 
     cv2.imshow("Tongue Detection", frame)
            
