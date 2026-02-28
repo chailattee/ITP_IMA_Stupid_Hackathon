@@ -271,6 +271,7 @@ class player:
             self.tongue_active = False
         if not self.tongue_hit and self.tongue_rect.colliderect(other_player.hitbox):
             print("Successful attack")
+            other_player.hurt()
             self.tongue_hit = True
 
     def draw_tongue(self, screen):
