@@ -82,7 +82,7 @@ def is_tongue_out(shape, frame, mouth_data):
             print(f"Keypoints found: {len(kp)}") 
 
             # boolean: tongue is out if mouth is open + keypoints found
-            if len(kp) > 5: # ADJUST THRESHOLD ONCE OVALS ARE DRAWN
+            if len(kp) > 100: # ADJUST THRESHOLD ONCE OVALS ARE DRAWN
                 tongue_is_out = True
         return tongue_is_out
     except Exception as e:
