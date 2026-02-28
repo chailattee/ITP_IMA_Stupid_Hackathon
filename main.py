@@ -1,6 +1,7 @@
 import pygame
 import pygame.freetype
 import sys
+import os
 import random
 import cv2
 import math
@@ -22,6 +23,16 @@ from detect_tongue_tip_real_time import is_tongue_out
 import time
 import random
 
+# Get the correct path for PyInstaller bundled resources
+def resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller"""
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 # Frame queue for thread-safe communication
 frame_queue = Queue(maxsize=2)
 detection_queue = Queue(maxsize=2)  # Queue for face angle data
@@ -31,7 +42,7 @@ last_frame = None
 
 # Initialize dlib face detector
 detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+predictor = dlib.shape_predictor(resource_path("shape_predictor_68_face_landmarks.dat"))
 
 
 def camera_capture_thread():
@@ -146,7 +157,7 @@ def get_tongue_states():
 
 pygame.init()
 
-myFont = pygame.freetype.Font("assets/papyrus.ttf", 24)
+myFont = pygame.freetype.Font(resource_path("assets/papyrus.ttf"), 24)
 
 gridWidth = 800
 gridHeight = 600
@@ -160,7 +171,7 @@ padSpacing = 120
 
 screen = pygame.display.set_mode((gridWidth, gridHeight))
 
-_frog_img = cv2.imread("assets/frog.png", cv2.IMREAD_UNCHANGED)
+_frog_img = cv2.imread(resource_path("assets/frog.png"), cv2.IMREAD_UNCHANGED)
 _frog_img = cv2.resize(
     _frog_img, (charWidth, charHeight), interpolation=cv2.INTER_NEAREST
 )
@@ -175,7 +186,7 @@ else:
     frog_sprite = pygame.surfarray.make_surface(_frog_img.swapaxes(0, 1))
 frog_sprite_flipped = pygame.transform.flip(frog_sprite, True, False)
 
-_bg_img = cv2.imread("assets/background.png", cv2.IMREAD_UNCHANGED)
+_bg_img = cv2.imread(resource_path("assets/background.png"), cv2.IMREAD_UNCHANGED)
 _bg_img = cv2.resize(_bg_img, (800, 600), interpolation=cv2.INTER_NEAREST)
 if _bg_img.shape[2] == 4:
     _bg_img = cv2.cvtColor(_bg_img, cv2.COLOR_BGRA2RGBA)
@@ -187,7 +198,7 @@ else:
     _bg_img = cv2.cvtColor(_bg_img, cv2.COLOR_BGR2RGB)
     bg_surface = pygame.surfarray.make_surface(_bg_img.swapaxes(0, 1))
 
-_lily_img = cv2.imread("assets/lilypad.png", cv2.IMREAD_UNCHANGED)
+_lily_img = cv2.imread(resource_path("assets/lilypad.png"), cv2.IMREAD_UNCHANGED)
 _lily_img = cv2.resize(_lily_img, (lilypadW, lilypadH), interpolation=cv2.INTER_NEAREST)
 if _lily_img.shape[2] == 4:
     _lily_img = cv2.cvtColor(_lily_img, cv2.COLOR_BGRA2RGBA)

@@ -7,6 +7,8 @@ import imutils
 import dlib
 import cv2
 from scipy.spatial import distance as dist
+import sys
+import os
 
 # construct the argument parser and parse the arguments
 # ap = argparse.ArgumentParser()
@@ -14,10 +16,20 @@ from scipy.spatial import distance as dist
 # 	help="path to facial landmark predictor", default="shape_predictor_68_face_landmarks.dat")
 # args = vars(ap.parse_args())
 
+# Get the correct path for PyInstaller bundled resources
+def resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller"""
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 # initialize dlib's face detector (HOG-based) and then create
 # the facial landmark predictor
 detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+predictor = dlib.shape_predictor(resource_path("shape_predictor_68_face_landmarks.dat"))
 
 # define one constants, for mouth aspect ratio to indicate open mouth
 MOUTH_AR_THRESH = 0.74
