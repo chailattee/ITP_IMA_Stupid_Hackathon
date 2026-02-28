@@ -107,6 +107,7 @@ if _frog_img.shape[2] == 4:
 else:
     _frog_img = cv2.cvtColor(_frog_img, cv2.COLOR_BGR2RGB)
     frog_sprite = pygame.surfarray.make_surface(_frog_img.swapaxes(0, 1))
+frog_sprite_flipped = pygame.transform.flip(frog_sprite, True, False)
 clock = pygame.time.Clock()
 
 # Start camera thread
@@ -133,7 +134,8 @@ class player:
         print("Attack!")
 
     def draw(self, screen):
-        screen.blit(frog_sprite, (self.x, self.y))
+        sprite = frog_sprite_flipped if self.player_id == 1 else frog_sprite
+        screen.blit(sprite, (self.x, self.y))
 
     def hurt(self):
         self.health -= 10
@@ -148,7 +150,7 @@ class player:
 
 
 player1 = player(100, gridHeight - charHeight, 0)
-player2 = player(700, gridHeight - charHeight, 0)
+player2 = player(700, gridHeight - charHeight, 1)
 players = [player1, player2]
 
 running = True
