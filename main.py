@@ -30,8 +30,7 @@ def camera_capture_thread():
         
         # Convert BGR to RGB for pygame
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame_rgb = cv2.transpose(frame_rgb)
-        frame_rgb = cv2.flip(frame_rgb, 0)
+        frame_rgb = frame_rgb.swapaxes(0, 1)  # Swap to (width, height, channels)
         
         if not frame_queue.full():
             frame_queue.put(frame_rgb)
@@ -49,6 +48,23 @@ clock = pygame.time.Clock()
 cam_thread = Thread(target=camera_capture_thread, daemon=True)
 cam_thread.start()
 
+class player:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+    
+    def move(self, dx):
+        self.x += dx
+
+    def attack(self):
+        print("Attack!")
+    
+    def draw(self):
+        #IMPLEMNT LATER
+        pass
+
+player1 = player(100, 500)
+player2 = player(700, 500)
 running = True
 while running:
     for event in pygame.event.get():
@@ -62,10 +78,12 @@ while running:
     # Display camera frame with AI
     if not frame_queue.empty():
         last_frame = frame_queue.get()
-    
+
     if last_frame is not None:
         surf = pygame.surfarray.make_surface(last_frame)
         screen.blit(surf, (250, 10))  # camera feed 
+    pygame.draw.rect(screen, (100, 255, 0), (player1.x, player1.y, 50, 50))  # Player 1
+    pygame.draw.rect(screen, (0, 255, 100), (player2.x, player2.y, 50, 50))  # Player 2
     
     pygame.display.flip()
     clock.tick(60)
