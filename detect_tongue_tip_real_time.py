@@ -78,10 +78,8 @@ def is_tongue_out(frame):
         print("Error in mouth detection: ", result["error"])
         return False
 
-# initialize the video stream and allow the cammera sensor to warmup
-vs = VideoStream(0).start()
-
 # loop over the frames from the video stream
+'''
 while True:
     frame = vs.read()
     if frame is None:
@@ -104,3 +102,4 @@ while True:
 # do a bit of cleanup
 cv2.destroyAllWindows()
 vs.stop()
+'''

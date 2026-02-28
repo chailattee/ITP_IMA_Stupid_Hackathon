@@ -228,6 +228,7 @@ while running:
                 print(f"Player {player_id + 1} tilt right! Move right triggered.")
     
     tongue_states = get_tongue_states()
+    print(f"Tongue states: {tongue_states}")  # Debugging: print tongue states
     if tongue_states:
         for tongue_state in tongue_states:
             player_id = tongue_states.index(tongue_state)
