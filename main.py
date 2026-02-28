@@ -10,6 +10,7 @@ from face_utils import get_mouth_loc_with_height, draw_mouth
 # Frame queue for thread-safe communication
 frame_queue = Queue(maxsize=2)
 running = True
+last_frame = None  # Store last frame to prevent flashing
 
 def camera_capture_thread():
     """Captures frames from camera with AI processing"""
@@ -19,7 +20,7 @@ def camera_capture_thread():
     while running:
         frame = vs.read()
         enhanced = cv2.detailEnhance(frame, sigma_s=10, sigma_r=0.15)
-        frame = imutils.resize(frame, width=500)
+        frame = imutils.resize(frame, width=300) #sizing camera feed
         
         # Try AI processing
         result = get_mouth_loc_with_height(enhanced)
@@ -60,9 +61,11 @@ while running:
     
     # Display camera frame with AI
     if not frame_queue.empty():
-        frame_rgb = frame_queue.get()
-        surf = pygame.surfarray.make_surface(frame_rgb)
-        screen.blit(surf, (100, 50))
+        last_frame = frame_queue.get()
+    
+    if last_frame is not None:
+        surf = pygame.surfarray.make_surface(last_frame)
+        screen.blit(surf, (250, 10))  # camera feed 
     
     pygame.display.flip()
     clock.tick(60)
