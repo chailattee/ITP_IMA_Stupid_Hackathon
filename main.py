@@ -54,7 +54,7 @@ def camera_capture_thread():
         # Extract angles and tongue states for each face (max 2)
         face_angles = []
         tongue_states = [False, False]
-        
+
         frame_center_x = frame.shape[1] // 2  # Midpoint of frame width
 
         for face_idx, rect in enumerate(rects):
@@ -266,8 +266,9 @@ class player:
     #     )  # Green health
 
 
-player1 = player((100 - (charWidth // 2)), gridHeight - charHeight, 0)
-player2 = player(gridWidth - (100 + (charWidth // 2)), gridHeight - charHeight, 1)
+# Player positions and Initialization
+player1 = player((150 - (charWidth // 2)), gridHeight - charHeight - 100, 0)
+player2 = player(gridWidth - (150 + (charWidth // 2)), gridHeight - charHeight - 100, 1)
 players = [player1, player2]
 
 
@@ -295,10 +296,10 @@ while running:
 
             # left=positive, right=negative relative to y axis
             if players[player_id].state > -1 and angle > 20:  # Player tilt left
-                players[player_id].move(-20)  # Move left
+                players[player_id].move(-50)  # Move left
                 print(f"Player {player_id + 1} tilt left! Move left triggered.")
             elif players[player_id].state < 1 and angle < -20:  # Player tilt right
-                players[player_id].move(20)  # Move right
+                players[player_id].move(50)  # Move right
                 print(f"Player {player_id + 1} tilt right! Move right triggered.")
 
     tongue_states = get_tongue_states()
