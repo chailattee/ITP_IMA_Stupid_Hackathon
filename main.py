@@ -17,8 +17,7 @@ from face_utils import (
     mouth_aspect_ratio,
     MOUTH_AR_THRESH,
 )
-from detect_tongue_tip_real_time import check_tongue_for_player
-import detect_tongue_tip_real_time
+from detect_tongue_tip_real_time import is_tongue_out
 import time
 
 # Frame queue for thread-safe communication
@@ -101,7 +100,7 @@ def camera_capture_thread():
                     "inner_mouth_y": inner_mouth_y,
                 }
 
-                tongue_states[face_idx] = check_tongue_for_player(
+                tongue_states[face_idx] = is_tongue_out(
                     shape, enhanced, mouth_data
                 )
             except:
