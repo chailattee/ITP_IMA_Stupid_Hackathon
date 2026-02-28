@@ -18,6 +18,7 @@ from face_utils import (
 )
 from detect_tongue_tip_real_time import check_tongue_for_player
 import detect_tongue_tip_real_time
+import time
 
 # Frame queue for thread-safe communication
 frame_queue = Queue(maxsize=2)
@@ -203,6 +204,7 @@ player2 = player(gridWidth - (100 + (charWidth / 2)), gridHeight - charHeight, 1
 players = [player1, player2]
 
 running = True
+prev = time.time()
 while running:
     clock.tick(60)
 
@@ -233,8 +235,11 @@ while running:
         for tongue_state in tongue_states:
             player_id = tongue_states.index(tongue_state)
             if tongue_state:  # Tongue is out
-                players[player_id].attack()  # Attack action
-                print(f"Player {player_id + 1} tongue out! Attack triggered.")
+                cur = time.time()
+                if cur - prev > 1:  # Prevent multiple attacks in quick succession
+                    players[player_id].attack()  # Attack action
+                    print(f"Player {player_id + 1} tongue out! Attack triggered.")
+                    prev = cur
 
     screen.fill((255, 255, 255))
 

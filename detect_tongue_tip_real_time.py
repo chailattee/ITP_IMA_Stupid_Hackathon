@@ -3,7 +3,7 @@ from imutils.video import VideoStream
 import imutils
 import cv2
 import numpy as np
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 import math
 from face_utils import MOUTH_AR_THRESH, draw_mouth, get_mouth_loc_with_height, mouth_aspect_ratio
 
