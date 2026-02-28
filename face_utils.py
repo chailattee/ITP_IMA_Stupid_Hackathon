@@ -110,7 +110,21 @@ def get_mouth_loc_with_height(image):
 		"inner_mouth_y":y, "y_lowest_in_face":y_lowest_in_face, "shape": shape}
 	else:
 		return {"error":"true", "message":"No Face Found!"}
-							
+
+def get_head_tilt_angle(shape):
+    # Top of the nose bridge (Index 27) and Bottom of the chin (Index 8)
+    nose_top = shape[27]
+    chin_bottom = shape[8]
+
+    # Calculate differences
+    dx = chin_bottom[0] - nose_top[0]
+    dy = chin_bottom[1] - nose_top[1]
+
+    # Calculate angle (0 degrees would be perfectly vertical)
+    angle = np.degrees(np.arctan2(dx, dy))
+    
+    return angle, nose_top, chin_bottom	 # positive = left, negative = right
+
 
 def get_mouth_loc(image):
 	image = imutils.resize(image, width=500)
@@ -187,3 +201,32 @@ def mouth_aspect_ratio(shape):
 
 	# return the mouth aspect ratio
 	return mar
+
+'''
+def get_eyes_loc(image):
+	image = imutils.resize(image, width=500)
+	gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+	# detect faces in the grayscale image
+	rects = detector(gray, 1)
+
+	# loop over the face detections
+	for (i, rect) in enumerate(rects):
+		# determine the facial landmarks for the face region, then
+		# convert the landmark (x, y)-coordinates to a NumPy array
+		shape = predictor(gray, rect)
+		shape = face_utils.shape_to_np(shape)
+
+		# extract eye coordinates
+		leftEye = shape[lStart:lEnd]
+		rightEye = shape[rStart:rEnd]
+
+		# Combine both eyes into one array to get a single bounding box
+		eyes = np.concatenate((leftEye, rightEye), axis=0)
+
+		#calculate the bounding box of the combined eye region
+		(x, y, w, h) = cv2.boundingRect(eyes)
+
+		return x,y,w,h, image
+	
+	return None # if no faces are detected, return None 
+	'''
