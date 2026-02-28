@@ -68,7 +68,6 @@ while True:
         cv2.putText(frame, "mouth aspect ratio: {:.2f}".format(mouthMAR), (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
         cv2.putText(frame, "keypoints: {}".format(len_kp), (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
 
-
     cv2.imshow("Tongue Detection", frame)
            
     key = cv2.waitKey(1) & 0xFF
