@@ -8,6 +8,7 @@ import math
 from face_utils import MOUTH_AR_THRESH, draw_mouth, get_mouth_loc_with_height, mouth_aspect_ratio
 
 orb = cv2.ORB_create(nfeatures=1000, fastThreshold=5, edgeThreshold=10)
+len_kp=0
 
 def check_tongue_for_player(shape, frame, mouth_data):
     """Helper: Detect if tongue is out for a specific player given their shape and mouth data"""
@@ -38,48 +39,59 @@ def check_tongue_for_player(shape, frame, mouth_data):
         return False
 
 # Function to detect if tongue is out, True = out, False = not out
-def is_tongue_out(frame):
-    if frame is None:
-        return False
-    
-    enhanced = cv2.detailEnhance(frame, sigma_s=10, sigma_r=0.15)
-    frame = imutils.resize(frame, width=500)
-
-    result = get_mouth_loc_with_height(enhanced)
-    tongue_is_out = False
-
-    if "error" not in result:
-        shape = result['shape']
-        frame = draw_mouth(frame, shape)
-        len_kp = 0
+def is_tongue_out(shape, frame, mouth_data):
+    try: 
+        if frame is None: return False
         
+        enhanced = cv2.detailEnhance(frame, sigma_s=10, sigma_r=0.15)
+        
+        # calculate tilt angle 
+        dx = shape[8][0] - shape[27][0]
+        dy = shape[8][1] - shape[27][1]
+        tilt_angle = math.degrees(math.atan2(dx, dy))
+
+        (h, w) = enhanced.shape[:2]
+        center = (float(shape[27][0]), float(shape[27][1]))
+        M = cv2.getRotationMatrix2D(center, tilt_angle, 1.0)
+       
+        leveled_frame = cv2.warpAffine(enhanced, M, (w, h))
+
+        leveled_result = get_mouth_loc_with_height(leveled_frame)
+        if "error" in leveled_result: return False
+
         # mouth aspect ratio to determine if mouth is open
         mouthMAR = mouth_aspect_ratio(shape) 
-
         if (mouthMAR > MOUTH_AR_THRESH) :
-            mX, mY, mW, mH = result['mouth_x'], result['mouth_y'], result['mouth_w'], result['mouth_h']
-            iMY = result['inner_mouth_y']
-            roi = enhanced[iMY:mY+mH, mX:mX + mW]
+            mX = leveled_result['mouth_x']
+            mY = leveled_result['mouth_y']
+            mW = leveled_result['mouth_w']
+            mH = leveled_result['mouth_h']
+            iMY = leveled_result['inner_mouth_y']
 
-            # resize the mouth region to a standard size
-            roi = imutils.resize(roi, width=250, inter=cv2.INTER_CUBIC)
+            roi = leveled_frame[iMY:mY+mH, mX :mX + mW ]
+
+            if roi.size == 0: return False
+
+            roi_final = imutils.resize(roi, width=250, inter=cv2.INTER_CUBIC)
+            kp = orb.detect(roi_final, None)
 
             # Detect keypoints (tongue has texture, empty mouth doesn't)
-            kp = orb.detect(roi,None)
-            len_kp = len(kp)
+            # kp = orb.detect(roi,None)
             ''' Debugging: show keypoints in mouth ROI '''
             print(f"Keypoints found: {len(kp)}") 
 
             # boolean: tongue is out if mouth is open + keypoints found
-            if len(kp) > 50: # ADJUST THRESHOLD ONCE OVALS ARE DRAWN
+            if len(kp) > 300: # ADJUST THRESHOLD ONCE OVALS ARE DRAWN
                 tongue_is_out = True
         return tongue_is_out
-    else:
-        print("Error in mouth detection: ", result["error"])
+    except Exception as e:
+        print(f"Error in is_tongue_out: {e}")
         return False
 
-# loop over the frames from the video stream
 '''
+# loop over the frames from the video stream
+vs = VideoStream(0).start()
+
 while True:
     frame = vs.read()
     if frame is None:

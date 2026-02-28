@@ -18,9 +18,9 @@ from face_utils import (
     mouth_aspect_ratio,
     MOUTH_AR_THRESH,
 )
-from detect_tongue_tip_real_time import check_tongue_for_player
-import detect_tongue_tip_real_time
+from detect_tongue_tip_real_time import is_tongue_out
 import time
+import random
 
 # Frame queue for thread-safe communication
 frame_queue = Queue(maxsize=2)
@@ -108,7 +108,7 @@ def camera_capture_thread():
                     "inner_mouth_y": inner_mouth_y,
                 }
 
-                tongue_states[player_id] = check_tongue_for_player(
+                tongue_states[player_id] = is_tongue_out(
                     shape, enhanced, mouth_data
                 )
             except:
@@ -311,7 +311,7 @@ class player:
         pygame.draw.rect(screen, (255, 0, 0), self.hitbox, 2)
 
     def hurt(self):
-        self.health -= random.randint(15, 30)
+        self.health -= random.randint(15,30)
         # print(f"Player {self.player_id} hurt! Health: {self.health}")
 
     # def draw_health_bar(self, screen):
@@ -324,6 +324,24 @@ class player:
     #     pygame.draw.rect(
     #         screen, (0, 255, 0), (self.x - 50, 25, fill_width, bar_height)
     #     )  # Green health
+
+
+game_over = False
+
+
+def end_game(screen, winner_id):
+    myFont.render_to(
+        screen,
+        (gridWidth // 2 - 100, gridHeight // 2),
+        f"player {winner_id + 1} wins.",
+        (0, 0, 0),
+    )
+    myFont.render_to(
+        screen,
+        (gridWidth // 2 - 100, gridHeight // 2 + 40),
+        "Press any key to reset.",
+        (0, 0, 0),
+    )
 
 
 # Lilypad and player setup
@@ -343,40 +361,63 @@ player1_fill_width = int(bar_width * (player1.health / 100))
 player2_fill_width = int(bar_width * (player2.health / 100))
 
 running = True
-prev = time.time()
+attack_prev = time.time()
+move_prev = time.time()
+reset_requested = False
+
 while running:
     clock.tick(60)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.KEYDOWN and game_over:
+            reset_requested = True
 
-    angles = get_player_head_angles()
-    if angles:
-        for player_data in angles:
-            player_id = player_data["face_id"]
-            angle = player_data["angle"]
-            # do something with player 0 or 1 and their angle
+    if player1.health <= 0 or player2.health <= 0:
+        game_over = True
 
-            # left=positive, right=negative relative to y axis
-            if players[player_id].state > -1 and angle > 20:  # Player tilt left
-                players[player_id].move(-1)
-                print(f"Player {player_id + 1} tilt left! Move left triggered.")
-            elif players[player_id].state < 1 and angle < -20:  # Player tilt right
-                players[player_id].move(1)
-                print(f"Player {player_id + 1} tilt right! Move right triggered.")
+    if game_over == False:
+        angles = get_player_head_angles()
+        if angles:
+            for player_data in angles:
+                player_id = player_data["face_id"]
+                angle = player_data["angle"]
+                # do something with player 0 or 1 and their angle
 
-    tongue_states = get_tongue_states()
-    # print(f"Tongue states: {tongue_states}")  # Debugging: print tongue states
-    if tongue_states:
-        for tongue_state in tongue_states:
-            player_id = tongue_states.index(tongue_state)
-            if tongue_state:  # Tongue is out
-                cur = time.time()
-                if cur - prev > 1:  # Prevent multiple attacks in quick succession
-                    players[player_id].attack(players[1 - player_id])  # Attack action
-                    print(f"Player {player_id + 1} tongue out! Attack triggered.")
-                    prev = cur
+                # left=positive, right=negative relative to y axis
+                if players[player_id].state > -1 and angle > 20:  # Player tilt left
+                    cur = time.time()
+                    if (
+                        cur - move_prev > 0.5
+                    ):  # Prevent multiple moves in quick succession
+                        players[player_id].move(-1)
+                        print(f"Player {player_id + 1} tilt left! Move left triggered.")
+                elif players[player_id].state < 1 and angle < -20:  # Player tilt right
+                    cur = time.time()
+                    if (
+                        cur - move_prev > 0.5
+                    ):  # Prevent multiple moves in quick succession
+                        players[player_id].move(1)
+                        print(
+                            f"Player {player_id + 1} tilt right! Move right triggered."
+                        )
+
+        tongue_states = get_tongue_states()
+        # print(f"Tongue states: {tongue_states}")  # Debugging: print tongue states
+        if tongue_states:
+            for tongue_state in tongue_states:
+                player_id = tongue_states.index(tongue_state)
+                if tongue_state:  # Tongue is out
+                    cur = time.time()
+                    if (
+                        cur - attack_prev > 1
+                    ):  # Prevent multiple attacks in quick succession
+                        players[player_id].attack(
+                            players[1 - player_id]
+                        )  # Attack action
+                        print(f"Player {player_id + 1} tongue out! Attack triggered.")
+                        attack_prev = cur
 
     screen.blit(bg_surface, (0, 0))
     pygame.draw.rect(
@@ -421,6 +462,19 @@ while running:
         p.draw(screen)
         p.draw_tongue(screen)
         # p.draw_health_bar(screen)
+
+    if game_over:
+        end_game(screen, 0 if player1.health > player2.health else 1)
+        if reset_requested:
+            # Reset game state
+            player1.health = 100
+            player2.health = 100
+            player1.state = 0
+            player2.state = 0
+            player1.x = player1.pads[1].cx - charWidth // 2
+            player2.x = player2.pads[1].cx - charWidth // 2
+            game_over = False
+            reset_requested = False
 
     pygame.display.flip()
     clock.tick(60)
