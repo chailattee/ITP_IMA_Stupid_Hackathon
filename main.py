@@ -95,6 +95,10 @@ class player:
     
     def move(self, dx):
         self.x += dx
+        if (self.state >-1 and dx < 0):
+            self.state -= 1
+        elif (self.state < 1 and dx > 0):
+            self.state += 1
 
     def attack(self):
         print("Attack!")
