@@ -155,6 +155,9 @@ gridHeight = 600
 charWidth = 200
 charHeight = 200
 tongueMaxWidth = 600
+lilypadW = 120
+lilypadH = 80
+padSpacing = 130
 
 screen = pygame.display.set_mode((gridWidth, gridHeight))
 
@@ -172,6 +175,19 @@ else:
     _frog_img = cv2.cvtColor(_frog_img, cv2.COLOR_BGR2RGB)
     frog_sprite = pygame.surfarray.make_surface(_frog_img.swapaxes(0, 1))
 frog_sprite_flipped = pygame.transform.flip(frog_sprite, True, False)
+
+_lily_img = cv2.imread("assets/lilypad.png", cv2.IMREAD_UNCHANGED)
+_lily_img = cv2.resize(_lily_img, (lilypadW, lilypadH), interpolation=cv2.INTER_NEAREST)
+if _lily_img.shape[2] == 4:
+    _lily_img = cv2.cvtColor(_lily_img, cv2.COLOR_BGRA2RGBA)
+    lilypad_sprite = pygame.Surface((lilypadW, lilypadH), pygame.SRCALPHA)
+    _lt = _lily_img.swapaxes(0, 1)
+    pygame.surfarray.pixels3d(lilypad_sprite)[:] = _lt[:, :, :3]
+    pygame.surfarray.pixels_alpha(lilypad_sprite)[:] = _lt[:, :, 3]
+else:
+    _lily_img = cv2.cvtColor(_lily_img, cv2.COLOR_BGR2RGB)
+    lilypad_sprite = pygame.surfarray.make_surface(_lily_img.swapaxes(0, 1))
+
 clock = pygame.time.Clock()
 
 # Start camera thread
@@ -179,23 +195,32 @@ cam_thread = Thread(target=camera_capture_thread, daemon=True)
 cam_thread.start()
 
 
-class player:
-    def __init__(self, x, y, player_id):
-        self.x = x
+class lilypad:
+    def __init__(self, cx, y):
+        self.cx = cx  # horizontal center
         self.y = y
-        self.health = 100
+
+    def draw(self, screen):
+        screen.blit(lilypad_sprite, (self.cx - lilypadW // 2, self.y))
+
+
+class player:
+    def __init__(self, pads, player_id):
+        self.pads = pads  # list of 3 lilypads, index 0=leftmost, 2=rightmost
         self.player_id = player_id
-        self.state = 0  # -1 0 1 for left, neutral, right
+        self.health = 100
+        self.state = 0  # -1, 0, 1
+        self.x = pads[1].cx - charWidth // 2  # start on middle pad
+        self.y = pads[1].y - charHeight + lilypadH // 2
         self.tongue_active = False
         self.tongue_width = 0
         self.tongue_hit = False
 
-    def move(self, dx):
-        self.x += dx
-        if self.state > -1 and dx < 0:
-            self.state -= 1
-        elif self.state < 1 and dx > 0:
-            self.state += 1
+    def move(self, direction):  # direction: -1 (left) or 1 (right)
+        new_state = self.state + direction
+        if -1 <= new_state <= 1:
+            self.state = new_state
+            self.x = self.pads[self.state + 1].cx - charWidth // 2
 
     @property
     def hitbox(self):
@@ -266,10 +291,15 @@ class player:
     #     )  # Green health
 
 
-# Player positions and Initialization
-player1 = player((150 - (charWidth // 2)), gridHeight - charHeight - 100, 0)
-player2 = player(gridWidth - (150 + (charWidth // 2)), gridHeight - charHeight - 100, 1)
+# Lilypad and player setup
+lilypad_y = gridHeight - lilypadH - 20
+p1_pads = [lilypad(100 + padSpacing * i, lilypad_y) for i in range(3)]
+p2_pads = [lilypad(gridWidth - 100 - padSpacing * (2 - i), lilypad_y) for i in range(3)]
+
+player1 = player(p1_pads, 0)
+player2 = player(p2_pads, 1)
 players = [player1, player2]
+all_pads = p1_pads + p2_pads
 
 
 
@@ -296,10 +326,10 @@ while running:
 
             # left=positive, right=negative relative to y axis
             if players[player_id].state > -1 and angle > 20:  # Player tilt left
-                players[player_id].move(-50)  # Move left
+                players[player_id].move(-1)
                 print(f"Player {player_id + 1} tilt left! Move left triggered.")
             elif players[player_id].state < 1 and angle < -20:  # Player tilt right
-                players[player_id].move(50)  # Move right
+                players[player_id].move(1)
                 print(f"Player {player_id + 1} tilt right! Move right triggered.")
 
     tongue_states = get_tongue_states()
@@ -345,6 +375,10 @@ while running:
     if last_frame is not None:
         surf = pygame.surfarray.make_surface(last_frame)
         screen.blit(surf, (250, 10))  # camera feed centered
+
+    # Draw lilypads
+    for pad in all_pads:
+        pad.draw(screen)
 
     # Update and draw players
     for i, p in enumerate(players):
