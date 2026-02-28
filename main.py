@@ -147,7 +147,7 @@ def get_tongue_states():
 
 pygame.init()
 
-myFont = pygame.freetype.Font("assets/papyrus.ttf", 36)
+myFont = pygame.freetype.Font("assets/papyrus.ttf", 24)
 
 gridWidth = 800
 gridHeight = 600
@@ -254,21 +254,28 @@ class player:
         self.health -= 10
         # print(f"Player {self.player_id} hurt! Health: {self.health}")
 
-    def draw_health_bar(self, screen):
-        bar_width = 150
-        bar_height = 20
-        fill_width = int(bar_width * (self.health / 100))
-        pygame.draw.rect(
-            screen, (255, 0, 0), (self.x - 50, 25, bar_width, bar_height)
-        )  # Red background
-        pygame.draw.rect(
-            screen, (0, 255, 0), (self.x - 50, 25, fill_width, bar_height)
-        )  # Green health
+    # def draw_health_bar(self, screen):
+    #     bar_width = 150
+    #     bar_height = 20
+    #     fill_width = int(bar_width * (self.health / 100))
+    #     pygame.draw.rect(
+    #         screen, (255, 0, 0), (self.x - 50, 25, bar_width, bar_height)
+    #     )  # Red background
+    #     pygame.draw.rect(
+    #         screen, (0, 255, 0), (self.x - 50, 25, fill_width, bar_height)
+    #     )  # Green health
 
 
 player1 = player((100 - (charWidth // 2)), gridHeight - charHeight, 0)
 player2 = player(gridWidth - (100 + (charWidth // 2)), gridHeight - charHeight, 1)
 players = [player1, player2]
+
+
+
+bar_width = 150
+bar_height = 20
+player1_fill_width = int(bar_width * (player1.health / 100))
+player2_fill_width = int(bar_width * (player2.health / 100))
 
 running = True
 prev = time.time()
@@ -307,8 +314,28 @@ while running:
                     prev = cur
 
     screen.fill((255, 255, 255))
+    pygame.draw.rect(
+            screen, (255, 0, 0), (100 - 50, 25, bar_width, bar_height)
+        )  # Red background p1
+    pygame.draw.rect(
+            screen, (255, 0, 0), (650 - 50, 25, bar_width, bar_height)
+        )  # Red background p2
+    player1_fill_width = int(bar_width * (player1.health / 100))
+    player2_fill_width = int(bar_width * (player2.health / 100))
+    pygame.draw.rect(
+            screen, (0, 255, 0), (100 - 50, 25, player1_fill_width, bar_height)
+        )  # Green health p1
+    pygame.draw.rect(
+            screen, (0, 255, 0), (650 - 50, 25, player2_fill_width, bar_height)
+        )  # Green health p2
 
-    myFont.render_to(screen, (100, 100), "testing, testing", (0, 0, 0))
+    # myFont.render_to(screen, (100, 100), "testing, testing", (0, 0, 0))
+
+    myFont.render_to(screen, (40, 60), "Player 1", (0, 0, 0))
+    myFont.render_to(screen, (590, 60), "Player 2", (0, 0, 0))
+    
+    myFont.render_to(screen, (90, 100), f"Health: {player1.health}", (0, 0, 0))
+    myFont.render_to(screen, (640, 100), f"Health: {player2.health}", (0, 0, 0))
 
     # Display camera frame with AI
     if not frame_queue.empty():
@@ -324,7 +351,7 @@ while running:
     for p in players:
         p.draw(screen)
         p.draw_tongue(screen)
-        p.draw_health_bar(screen)
+        #p.draw_health_bar(screen)
         p.draw_hitbox(screen)
 
     pygame.display.flip()
