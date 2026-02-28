@@ -1,4 +1,5 @@
 import pygame
+import pygame.freetype
 import sys
 import cv2
 import math
@@ -114,7 +115,7 @@ def camera_capture_thread():
         if not frame_queue.full():
             frame_queue.put(frame_rgb)
 
-    vs.release()
+    vs.stop()
 
 
 def get_player_head_angles():
@@ -132,6 +133,9 @@ def get_tongue_states():
 
 
 pygame.init()
+
+myFont = pygame.freetype.Font("assets/papyrus.ttf", 36)
+
 gridWidth = 800
 gridHeight = 600
 
@@ -211,8 +215,6 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-            pygame.quit()
-            sys.exit()
 
     angles = get_player_head_angles()
     if angles:
@@ -243,6 +245,8 @@ while running:
 
     screen.fill((255, 255, 255))
 
+    myFont.render_to(screen, (100, 100), "testing, testing", (0, 0, 0))
+
     # Display camera frame with AI
     if not frame_queue.empty():
         last_frame = frame_queue.get()
@@ -258,3 +262,6 @@ while running:
 
     pygame.display.flip()
     clock.tick(60)
+
+pygame.quit()
+sys.exit()
