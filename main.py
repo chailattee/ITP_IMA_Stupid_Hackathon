@@ -1,6 +1,7 @@
 import pygame
 import pygame.freetype
 import sys
+import random
 import cv2
 import math
 import dlib
@@ -298,7 +299,7 @@ class player:
         pygame.draw.rect(screen, (255, 0, 0), self.hitbox, 2)
 
     def hurt(self):
-        self.health -= 10
+        self.health -= random.randint(15, 30)
         # print(f"Player {self.player_id} hurt! Health: {self.health}")
 
     # def draw_health_bar(self, screen):
