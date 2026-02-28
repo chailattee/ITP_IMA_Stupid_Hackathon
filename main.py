@@ -1,0 +1,2 @@
+import detect_tongue_tip_real_time
+detect_tongue_tip_real_time.main()
