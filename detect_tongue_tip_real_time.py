@@ -118,11 +118,11 @@ while True:
             cv2.imshow("output", frame)
             # cv2.imwrite("frames/"+str(i)+".jpg", frame)
         else:
-            cv2.imshow("output", frame)
+            cv2.imshow("output", frame) ######## Displays the output frame with detected mouth and tongue tip (if mouth is open)
         
     key = cv2.waitKey(1) & 0xFF
     # if the `q` key was pressed, break from the loop
-    if key == ord("q"):
+    if key == ord("q"): 
         break
 
 # do a bit of cleanup
