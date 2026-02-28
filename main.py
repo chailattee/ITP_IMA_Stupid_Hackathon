@@ -311,7 +311,7 @@ class player:
         pygame.draw.rect(screen, (255, 0, 0), self.hitbox, 2)
 
     def hurt(self):
-        self.health -= random.randint(15,30)
+        self.health = max(0, self.health - random.randint(15, 30))
         # print(f"Player {self.player_id} hurt! Health: {self.health}")
 
     # def draw_health_bar(self, screen):
@@ -473,6 +473,8 @@ while running:
             player2.state = 0
             player1.x = player1.pads[1].cx - charWidth // 2
             player2.x = player2.pads[1].cx - charWidth // 2
+            move_prev = time.time()
+            attack_prev = time.time()
             game_over = False
             reset_requested = False
 
