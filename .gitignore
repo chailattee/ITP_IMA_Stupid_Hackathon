@@ -56,3 +56,5 @@ profile.json.gz
 uv.lock
 .python-version
 pyproject.toml
+
+pyrightconfig.json
