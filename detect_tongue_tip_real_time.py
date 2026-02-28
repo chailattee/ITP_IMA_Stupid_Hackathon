@@ -7,8 +7,6 @@ from matplotlib import pyplot as plt
 import math
 from face_utils import MOUTH_AR_THRESH, draw_mouth, get_mouth_loc_with_height, mouth_aspect_ratio
 
-# settings
-SKIP_FRAMES = 1 # when changed it flashes
 
 orb = cv2.ORB_create(nfeatures=1000, fastThreshold=5, edgeThreshold=10)
 
@@ -31,47 +29,45 @@ while True:
         break
 
     i += 1
-    if i % SKIP_FRAMES == 0:
 
-        # cv2.imwrite("frames/"+str(i)+".jpg", frame)
-        enhanced = cv2.detailEnhance(frame, sigma_s=10, sigma_r=0.15)
-        frame = imutils.resize(frame, width=500)
-        # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        # image = frame.copy()
+    enhanced = cv2.detailEnhance(frame, sigma_s=10, sigma_r=0.15)
+    frame = imutils.resize(frame, width=500)
 
-        result = get_mouth_loc_with_height(enhanced)
+    result = get_mouth_loc_with_height(enhanced)
+    tongue_is_out = False
 
-        tongue_is_out = False
+    if "error" not in result:
+        shape = result['shape']
+        frame = draw_mouth(frame, shape)
+        len_kp = 0
+        
+        # mouth aspect ratio to determine if mouth is open
+        mouthMAR = mouth_aspect_ratio(shape) 
 
-        if "error" not in result:
-            shape = result['shape']
-            frame = draw_mouth(frame, shape)
+        if (mouthMAR > MOUTH_AR_THRESH) :
+            mX, mY, mW, mH = result['mouth_x'], result['mouth_y'], result['mouth_w'], result['mouth_h']
+            iMY = result['inner_mouth_y']
+            roi = enhanced[iMY:mY+mH, mX:mX + mW]
 
-            # mouth aspect ratio to determine if mouth is open
-            mouthMAR = mouth_aspect_ratio(shape) 
+            # resize the mouth region to a standard size
+            roi = imutils.resize(roi, width=250, inter=cv2.INTER_CUBIC)
 
-            if (mouthMAR > MOUTH_AR_THRESH) :
-                mX, mY, mW, mH = result['mouth_x'], result['mouth_y'], result['mouth_w'], result['mouth_h']
-                iMY = result['inner_mouth_y']
-                roi = enhanced[iMY:mY+mH, mX:mX + mW]
+            # Detect keypoints (tongue has texture, empty mouth doesn't)
+            kp = orb.detect(roi,None)
+            len_kp = len(kp)
+            ''' Debugging: show keypoints in mouth ROI '''
+            # print(f"Keypoints found: {len(kp)}") 
 
-                # resize the mouth region to a standard size
-                roi = cv2.resize(roi, (150, 100), interpolation=cv2.INTER_CUBIC)
+            # boolean: tongue is out if mouth is open + keypoints found
+            if len(kp) > 30: # adjust threshold as needed
+                tongue_is_out = True
 
-                # Detect keypoints (tongue has texture, empty mouth doesn't)
-                kp = orb.detect(roi,None)
-                
-                ''' Debugging: show keypoints in mouth ROI '''
-                print(f"Keypoints found: {len(kp)}") 
+        status_text = "TONGUE OUT" if tongue_is_out else "NO TONGUE"
+        color = (0, 0, 255) if tongue_is_out else (0, 255, 0)
+        cv2.putText(frame, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+        cv2.putText(frame, "mouth aspect ratio: {:.2f}".format(mouthMAR), (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+        cv2.putText(frame, "keypoints: {}".format(len_kp), (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
 
-                # boolean: tongue is out if mouth is open + keypoints found
-                if len (kp ) > 120: # adjust threshold as needed
-                    tongue_is_out = True
-
-            status_text = "TONGUE OUT" if tongue_is_out else "NO TONGUE"
-            color = (0, 0, 255) if tongue_is_out else (0, 255, 0)
-            cv2.putText(frame, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
-            cv2.putText(frame, "mouth aspect ratio: {:.2f}".format(mouthMAR), (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
 
     cv2.imshow("Tongue Detection", frame)
            
