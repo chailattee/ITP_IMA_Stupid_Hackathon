@@ -106,7 +106,7 @@ def camera_capture_thread():
                     "inner_mouth_y": inner_mouth_y,
                 }
 
-                tongue_states[player_id] = check_tongue_for_player(
+                tongue_states[player_id] = is_tongue_out(
                     shape, enhanced, mouth_data
                 )
             except:
