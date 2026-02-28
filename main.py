@@ -255,10 +255,12 @@ class player:
         tongue_height = 20
         y = self.hitbox.centery - (tongue_height // 2) + 25
         if self.player_id == 0:
-            return pygame.Rect(self.hitbox.right, y, self.tongue_width, tongue_height)
+            return pygame.Rect(
+                self.hitbox.right - 8, y, self.tongue_width, tongue_height
+            )
         else:
             return pygame.Rect(
-                self.hitbox.left - self.tongue_width,
+                self.hitbox.left + 8 - self.tongue_width,
                 y,
                 self.tongue_width,
                 tongue_height,
@@ -286,7 +288,7 @@ class player:
 
     def draw_tongue(self, screen):
         if self.tongue_active:
-            pygame.draw.rect(screen, (255, 105, 180), self.tongue_rect)
+            pygame.draw.rect(screen, (224, 111, 139), self.tongue_rect)
 
     def draw(self, screen):
         sprite = frog_sprite_flipped if self.player_id == 1 else frog_sprite
