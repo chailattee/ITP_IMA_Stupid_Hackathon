@@ -157,7 +157,7 @@ charHeight = 200
 tongueMaxWidth = 600
 lilypadW = 120
 lilypadH = 80
-padSpacing = 130
+padSpacing = 120
 
 screen = pygame.display.set_mode((gridWidth, gridHeight))
 
@@ -214,6 +214,7 @@ class player:
         self.y = pads[1].y - charHeight + lilypadH // 2
         self.tongue_active = False
         self.tongue_width = 0
+        self.tongue_max_width = 0
         self.tongue_hit = False
 
     def move(self, direction):  # direction: -1 (left) or 1 (right)
@@ -234,10 +235,18 @@ class player:
             charHeight - inset_top - inset_bottom,
         )
 
-    def attack(self):
+    def attack(self, other_player):
         self.tongue_active = True
         self.tongue_width = 0
         self.tongue_hit = False
+        # Max reach: from this player's front pad to other's middle pad
+        front_pad = self.pads[2] if self.player_id == 0 else self.pads[0]
+        mid_pad = other_player.pads[1]
+        if self.player_id == 0:
+            self.tongue_max_width = mid_pad.cx - front_pad.cx
+        else:
+            self.tongue_max_width = front_pad.cx - mid_pad.cx
+        self.tongue_max_width = max(0, self.tongue_max_width)
 
     @property
     def tongue_rect(self):
@@ -257,8 +266,8 @@ class player:
         if not self.tongue_active:
             return
         self.tongue_width += 50
-        if self.tongue_width >= tongueMaxWidth:
-            self.tongue_width = tongueMaxWidth
+        if self.tongue_width >= self.tongue_max_width:
+            self.tongue_width = self.tongue_max_width
             self.tongue_active = False
         if not self.tongue_hit and self.tongue_rect.colliderect(other_player.hitbox):
             print("Successful attack")
@@ -302,7 +311,6 @@ players = [player1, player2]
 all_pads = p1_pads + p2_pads
 
 
-
 bar_width = 150
 bar_height = 20
 player1_fill_width = int(bar_width * (player1.health / 100))
@@ -340,31 +348,31 @@ while running:
             if tongue_state:  # Tongue is out
                 cur = time.time()
                 if cur - prev > 1:  # Prevent multiple attacks in quick succession
-                    players[player_id].attack()  # Attack action
+                    players[player_id].attack(players[1 - player_id])  # Attack action
                     print(f"Player {player_id + 1} tongue out! Attack triggered.")
                     prev = cur
 
     screen.fill((255, 255, 255))
     pygame.draw.rect(
-            screen, (255, 0, 0), (100 - 50, 25, bar_width, bar_height)
-        )  # Red background p1
+        screen, (255, 0, 0), (100 - 50, 25, bar_width, bar_height)
+    )  # Red background p1
     pygame.draw.rect(
-            screen, (255, 0, 0), (650 - 50, 25, bar_width, bar_height)
-        )  # Red background p2
+        screen, (255, 0, 0), (650 - 50, 25, bar_width, bar_height)
+    )  # Red background p2
     player1_fill_width = int(bar_width * (player1.health / 100))
     player2_fill_width = int(bar_width * (player2.health / 100))
     pygame.draw.rect(
-            screen, (0, 255, 0), (100 - 50, 25, player1_fill_width, bar_height)
-        )  # Green health p1
+        screen, (0, 255, 0), (100 - 50, 25, player1_fill_width, bar_height)
+    )  # Green health p1
     pygame.draw.rect(
-            screen, (0, 255, 0), (650 - 50, 25, player2_fill_width, bar_height)
-        )  # Green health p2
+        screen, (0, 255, 0), (650 - 50, 25, player2_fill_width, bar_height)
+    )  # Green health p2
 
     # myFont.render_to(screen, (100, 100), "testing, testing", (0, 0, 0))
 
     myFont.render_to(screen, (40, 60), "Player 1", (0, 0, 0))
     myFont.render_to(screen, (590, 60), "Player 2", (0, 0, 0))
-    
+
     myFont.render_to(screen, (90, 100), f"Health: {player1.health}", (0, 0, 0))
     myFont.render_to(screen, (640, 100), f"Health: {player2.health}", (0, 0, 0))
 
@@ -386,7 +394,7 @@ while running:
     for p in players:
         p.draw(screen)
         p.draw_tongue(screen)
-        #p.draw_health_bar(screen)
+        # p.draw_health_bar(screen)
         p.draw_hitbox(screen)
 
     pygame.display.flip()
