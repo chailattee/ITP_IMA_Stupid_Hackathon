@@ -177,6 +177,18 @@ else:
     frog_sprite = pygame.surfarray.make_surface(_frog_img.swapaxes(0, 1))
 frog_sprite_flipped = pygame.transform.flip(frog_sprite, True, False)
 
+_bg_img = cv2.imread("assets/background.png", cv2.IMREAD_UNCHANGED)
+_bg_img = cv2.resize(_bg_img, (800, 600), interpolation=cv2.INTER_NEAREST)
+if _bg_img.shape[2] == 4:
+    _bg_img = cv2.cvtColor(_bg_img, cv2.COLOR_BGRA2RGBA)
+    bg_surface = pygame.Surface((800, 600), pygame.SRCALPHA)
+    _bt = _bg_img.swapaxes(0, 1)
+    pygame.surfarray.pixels3d(bg_surface)[:] = _bt[:, :, :3]
+    pygame.surfarray.pixels_alpha(bg_surface)[:] = _bt[:, :, 3]
+else:
+    _bg_img = cv2.cvtColor(_bg_img, cv2.COLOR_BGR2RGB)
+    bg_surface = pygame.surfarray.make_surface(_bg_img.swapaxes(0, 1))
+
 _lily_img = cv2.imread("assets/lilypad.png", cv2.IMREAD_UNCHANGED)
 _lily_img = cv2.resize(_lily_img, (lilypadW, lilypadH), interpolation=cv2.INTER_NEAREST)
 if _lily_img.shape[2] == 4:
@@ -315,7 +327,7 @@ class player:
 
 
 # Lilypad and player setup
-lilypad_y = gridHeight - lilypadH - 20
+lilypad_y = gridHeight - lilypadH - 160
 p1_pads = [lilypad(100 + padSpacing * i, lilypad_y) for i in range(3)]
 p2_pads = [lilypad(gridWidth - 100 - padSpacing * (2 - i), lilypad_y) for i in range(3)]
 
@@ -366,7 +378,7 @@ while running:
                     print(f"Player {player_id + 1} tongue out! Attack triggered.")
                     prev = cur
 
-    screen.fill((255, 255, 255))
+    screen.blit(bg_surface, (0, 0))
     pygame.draw.rect(
         screen, (255, 0, 0), (100 - 50, 25, bar_width, bar_height)
     )  # Red background p1
