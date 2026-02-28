@@ -41,6 +41,7 @@ def check_tongue_for_player(shape, frame, mouth_data):
 # Function to detect if tongue is out, True = out, False = not out
 def is_tongue_out(shape, frame, mouth_data):
     try: 
+        tongue_is_out = False
         if frame is None: return False
         
         enhanced = cv2.detailEnhance(frame, sigma_s=10, sigma_r=0.15)
@@ -81,7 +82,7 @@ def is_tongue_out(shape, frame, mouth_data):
             print(f"Keypoints found: {len(kp)}") 
 
             # boolean: tongue is out if mouth is open + keypoints found
-            if len(kp) > 300: # ADJUST THRESHOLD ONCE OVALS ARE DRAWN
+            if len(kp) > 5: # ADJUST THRESHOLD ONCE OVALS ARE DRAWN
                 tongue_is_out = True
         return tongue_is_out
     except Exception as e:
