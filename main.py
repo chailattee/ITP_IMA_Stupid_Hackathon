@@ -27,6 +27,7 @@ def camera_capture_thread():
     
     while running:
         frame = vs.read()
+        frame = cv2.flip(frame, 1)  # flip horizontally
         if frame is None:
             continue
             
@@ -47,8 +48,12 @@ def camera_capture_thread():
             shape = predictor(gray, rect)
             shape = shape_to_np(shape)
             
-            # Get head tilt angle
-            angle, _, _ = get_head_tilt_angle(shape)
+            # Draw mouth landmarks on frame
+            frame = draw_mouth(frame, shape)
+            
+            # Get head tilt angle and draw line from chin to nose
+            angle, nose_top, chin_bottom = get_head_tilt_angle(shape)
+            cv2.line(frame, tuple(nose_top), tuple(chin_bottom), (0, 255, 255), 2)  # Yellow line
             
             face_angles.append({
                 'face_id': face_idx,
@@ -110,6 +115,14 @@ class player:
     def hurt(self):
         self.health -= 10
         #print(f"Player {self.player_id} hurt! Health: {self.health}")
+    
+    def draw_health_bar(self, screen):
+        bar_width = 150
+        bar_height = 20
+        fill_width = int(bar_width * (self.health / 100))
+        pygame.draw.rect(screen, (255, 0, 0), (self.x - 50, 25, bar_width, bar_height))  # Red background
+        pygame.draw.rect(screen, (0, 255, 0), (self.x - 50, 25, fill_width, bar_height))  # Green health
+
 
 player1 = player(100, 500, 0)
 player2 = player(700, 500, 0)
@@ -134,9 +147,9 @@ while running:
 
             #left=positive, right=negative relative to y axis
             if (players[player_id].state > -1 and angle > 20):  # Player tilt left
-                players[player_id].move(-5)  # Move left
+                players[player_id].move(-20)  # Move left
             elif (players[player_id].state < 1 and angle < -20):  # Player tilt right
-                players[player_id].move(5)  # Move right
+                players[player_id].move(20)  # Move right
             
 
     screen.fill((255, 255, 255))
@@ -152,6 +165,7 @@ while running:
     # Draw players
     for p in players:
         p.draw(screen)
+        p.draw_health_bar(screen)
     
     pygame.display.flip()
     clock.tick(60)
